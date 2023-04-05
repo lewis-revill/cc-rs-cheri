@@ -19,6 +19,7 @@ edition = "2018"
 
 [dependencies]
 jobserver = { version = "0.1.16", optional = true }
+home = "0.5"
 
 [features]
 parallel = ["jobserver"]
