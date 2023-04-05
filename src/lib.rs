@@ -66,6 +66,8 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
+use home::home_dir;
+
 mod os_pipe;
 
 // These modules are all glue to support reading the MSVC version from
@@ -1813,7 +1815,21 @@ impl Build {
                 if !(target.contains("android")
                     && android_clang_compiler_uses_target_arg_internally(&cmd.path))
                 {
-                    if target.contains("darwin") {
+                    if target.starts_with("morello") {
+                        if target.contains("linux") {
+                            cmd.args.push("--target=aarch64-unknown-linux-musl_purecap".into());
+                            let sysroot = match home_dir() {
+                                Some(path) => path.as_path().join("morello").join("musl"),
+                                None => Path::new("").to_path_buf(),
+                            };
+                            let sysroot = sysroot.into_os_string().into_string().unwrap();
+                            cmd.args.push(format!("--sysroot={}", sysroot).into());
+                        } else {
+                            cmd.args.push("--target=aarch64-none-elf".into());
+                        }
+                        cmd.args.push("-march=morello+c64".into());
+                        cmd.args.push("-mabi=purecap".into());
+                    } else if target.contains("darwin") {
                         if let Some(arch) =
                             map_darwin_target_from_rust_to_compiler_architecture(target)
                         {
